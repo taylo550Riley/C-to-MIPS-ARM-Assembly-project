@@ -1,0 +1,121 @@
+# Riley Taylor
+# Dr. Jamieson
+# 4/6/22
+# Intermediate Assembly matrix multiplication
+
+#  -   -     --     --     -          -
+# | 6 5 |   | 7 9  11 |   | 82 104 126 |
+# | 4 3 | x | 8 10 12 | = | 52  66  80 |
+# | 2 1 |    --     --    | 22  28  34 |
+#  -   -                   -          -
+.data
+	array1:		.word	1, 1, 1, -1
+	array2:		.word	2, 0, -3, 4
+	array3:	
+	array4:
+	array5:
+	array6:
+	array7:
+	array8:		.word	3, 1
+	array9:		.word	-4, 1
+	array10:	.word	5, 1
+	array11:	.word	-4, 3
+	array12:	
+	array13:
+	array14:
+	array15:
+	
+	mrow:	.word	2
+	mcol:	.word	4
+	nrow:	.word	4
+	ncol:	.word	2
+.text
+main:
+	lw $s2, nrow			# loads $s2 with nrow
+	lw $s1, mcol			# loads $s1 with mcol
+	bne $s2, $s1, EXIT 		# if (nrow != mcol) return r_m (exit)
+	lw $s0, mrow			# loads $s0 with mrow
+	lw $s3, ncol			# loads $s3 with ncol
+	li $t0, 0 			# int i
+	li $t1, 0 			# int j
+	li $t2, 0 			# int k
+	la $t9, 268697600		# loads dynamic memory start
+
+	mul $a1, $s1, 4			# row calculation is weighted by mcol, used in building m
+	mul $a2, $s3, 4			# row calculation is weighted by ncol, used in building n
+	
+	# First Malloc operation, r_m = (int **)malloc(sizeof(int *)*ncol)
+	li $t3, 4
+	mul $t4, $t3, $s3 
+	li $v0, 9
+	move $a0, $t4
+	syscall
+	###################### end malloc operation
+	
+	li $t4, 0 			# clear $t4 for next malloc operation
+	mul $t4, $t3, $s0		# $t4 = 4 * mrow, condition for looped malloc
+	jal forMalloc
+
+	# reusing t3 and t4 for pointers
+	la $t3, array1			# starting address of m
+	la $t4, array8			# starting address of n
+	
+	j for_i
+
+forMalloc:
+	li $v0, 9
+	move $a0, $t4			# malloc operation
+	syscall
+	add $t0, $t0, 1 		# i++
+	blt $t0, $s3, forMalloc		# i < ncol
+	li $t0, 0 			# i = 0, resetting value of i
+	jr $ra
+	
+for_i:
+	blt $t0, $s3, for_j 		# i < ncol
+	j EXIT
+	
+	for_j:
+		blt $t1, $s0, for_k	# j < mrow
+		add $t0, $t0, 1		# i++
+		li $t1, 0		# j = 0
+		j for_i
+		
+		for_k:
+			la $t3, array1			# reset a1 address
+			la $t4, array8			# reset a4 address
+			mul $t8, $t2, 4			# $t8 = k * 4
+			mul $t6, $t0, 4 		# $t6 = i * 4
+			blt $t2, $s2, matrix_builder	# k < nrow
+			sw $t5, ($t9)			# r_m[i][j] = m[k][j] * n[i][k]
+			li $t5, 0			# r_m[i][j] = 0
+			add $t9, $t9, 4			# point to next word in dynamic memory
+			add $t1, $t1, 1			# j++
+			li $t2, 0			# k = 0
+			j for_j
+
+	matrix_builder:
+			
+		############################################################## Building m[k][j]
+		mul $t7, $t1, $a1	# $t7 = j * n weight
+		add $t3, $t3, $t7	# address addition m[k]
+		add $t3, $t3, $t8	# address addition m[j]
+		lw $s5, ($t3)
+		##############################################################
+				
+		############################################################## Building n[i][k]
+		mul $t8, $t2, $a2	# $t8 = k * m weight
+		add $t4, $t4, $t6	# address addition n[i]
+		add $t4, $t4, $t8	# address addition n[k]
+		lw $s6, ($t4)
+		##############################################################
+				
+		# Prepping r_m to store into r_m[i][j]
+		mul $s7, $s5, $s6	# m[k][j] * n[i][k]
+		add $t5, $t5, $s7	# r_m = m[k][j] * n[i][k]
+		add $t2, $t2, 1		# k++
+		j for_k
+	
+EXIT:
+	li $v0, 10
+	syscall

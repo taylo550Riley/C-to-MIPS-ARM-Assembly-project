@@ -1,0 +1,49 @@
+# Riley Taylor
+# Dr. Jamieson
+# 3/19/22
+# Intermediate Assembly Bubble Sort
+#Bubble Sort best-O(n) avg-O(n2) worst-O(n2)
+#Bubble sort for an integer array
+.data
+	a:		.word	5,4,3,2,1,-1,0,50,40,30,8,-1
+.text
+void_BubbleSort: 		# parameters int a[] and int array_size
+	# Assume s0 and s1 are i and j respectively
+	li $s3, 12		# loads array_size in $s3
+	sub $s3, $s3, 1 	# prepares for size - 1 in the loops
+	la $t0, a 		# loads address of array in $t0
+	
+	j for_i
+	
+for_i: # for (i = 0; i < (size - 1); ++i)
+	blt $s0, $s3, for_j
+	j EXIT
+
+	for_j: # for (j = 0; j < size - 1 - i; j++)
+		la $t0, a		# reset static memory pointer
+		sub $s4, $s3, $s0 	# $s4 = size - 1 - i
+		mul $t3, $s1, 4		# $t3 = j * 4
+		add $t0, $t0, $t3	# t0 points to a[j]
+		lw $t7, ($t0)		# a[j]
+		add $t0, $t0, 4		# point to j + 1
+		lw $t8, ($t0)		#a[j + 1]		
+		blt $s1, $s4, check_if	# j < array_size - 1 - i
+		add $s0, $s0, 1 	# i++
+		li $s1, 0		# j = 0
+		j for_i
+		
+			check_if:
+				bgt $t7, $t8, if_success	# a[j] > a[j + 1]
+				add $s1, $s1, 1			# j++
+				j for_j
+				
+				if_success:
+					add $t6, $t8, 0		# temp = a[j + 1]
+					sw $t7, ($t0)		# a[j + 1] = a[j]
+					sub $t0, $t0, 4		# points to a[j]
+					sw $t6, ($t0)		# a[j] = temp
+					add $s1, $s1, 1 	# j++
+					j for_j
+EXIT:
+	li $v0, 10
+	syscall

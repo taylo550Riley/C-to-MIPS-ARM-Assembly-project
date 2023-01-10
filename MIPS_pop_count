@@ -1,0 +1,30 @@
+# Riley Taylor
+# Dr. Jamieson
+# 4/6/22
+# Intermediate Assembly pop_count
+# Basically a direct translation from the c code. used the 'and'
+# bit-wise operator
+
+##################### example outputs ##################### 
+	#pop count 1000, $s1 will output 6 because 1000 = 1111101000
+	#pop count 50, $s1 will output 3 because 50 = 110010
+	#pop count 1135678, $s1 will output 10 because 1135678 = 100010101010000111110
+	#pop count 1, $s1 will output 1 because 1 = 1
+	#pop count 0, $s1 will output 0 because 0 = 0
+###########################################################
+main:
+	li $s1, 0 	# sum
+	li $s2, 0 	# i = 1
+	li $s0, 123 	# this will be the input value
+	j forLoop
+forLoop:
+	addi $s2, $s2, 1 	# i ++
+	and $t0, $s0, 1 	# $t0 = $s0 and 1
+	add $s1, $s1, $t0 	# sum += (input) & 1
+	div $s0, $s0, 2 	# input / 2
+	blt $s2, 32, forLoop 	# for i < 32
+	j EXIT
+	
+EXIT:
+	li $v0, 10
+	syscall

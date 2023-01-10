@@ -1,0 +1,93 @@
+# Riley Taylor
+# Dr. Jamieson
+# 4/6/22
+# Intermediate Assembly matrix scalar multiplication / unoptimized
+
+#  -   -         --    --
+# | 6 5 |       | 30  25 |
+# | 4 3 | x 5 = | 20  15 |
+# | 2 1 |       | 10   5 |
+#  -   -         --    --
+.data
+	array1:		.word	3, 4
+	array2:		.word	-1, 0
+	array3:		.word	-3, 7
+	array4:
+	array5:
+	array6:
+	array7:
+	array8:
+	array9:
+	array10:
+	array11:
+	array12:	
+	array13:
+	array14:
+	array15:
+	
+	row:		.word	3
+	col:		.word	2
+	scalar:		.word	-7
+.text
+main:
+	lw $s0, row			# loads $s0 with row
+	lw $s1, col			# loads $s1 with col
+	lw $s2, scalar			# loads $s2 with scalar
+	# Assume t0 and t1 are i and j respectively
+	la $t9, 268697600		# loads dynamic memory start
+	
+	mul $a1, $s1, 4			# row calculation is weighted by col, used in building m
+	
+	# First Malloc operation, r_m = (int **)malloc(sizeof(int *)*col)
+	li $t3, 4 
+	mul $t4, $t3, $s1 
+	li $v0, 9
+	move $a0, $t4
+	syscall
+	######################
+	
+	li $t4, 0 			# clear $t4 for next malloc operation
+ 	mul $t4, $t3, $s0		# $t4 = 4 * row, condition for looped malloc
+	jal forMalloc
+
+	li $t0, 0 			# i = 0, resetting value of i
+	la $t3, array1			# starting address of m
+	
+	j for_i
+
+forMalloc:
+	li $v0, 9
+	move $a0, $t4			# malloc operation
+	syscall
+	add $t0, $t0, 1 		# i++
+	blt $t0, $s1, forMalloc		# i < col
+	jr $ra
+	
+for_i:
+	li $t1, 0		 	# j = 0
+	blt $t0, $s1, for_j 		# i < col
+	j EXIT
+	
+	for_j:
+		blt $t1, $s0, matrix_builder	# j < row
+		add $t0, $t0, 1			# i++
+		j for_i
+		
+		matrix_builder:
+			############################################################## Building m[i][j]
+			mul $t8, $t0, 4		# $t8 = i * 4
+			mul $t7, $a1, $t1	# $t7 = j * 4
+			add $t3, $t3, $t8	# address addition m[i]
+			add $t3, $t3, $t7	# address addition m[j]
+			lw $s5, ($t3)
+			##############################################################				
+			mul $s7, $s5, $s2	# m[i][j] * scalar			
+			add $t1, $t1, 1		# j++
+			la $t3, array1
+			sw $s7, ($t9)		# r_m[i][j] = m[i][j] * scalar
+			add $t9, $t9, 4		# point to next word in dynamic memory
+			j for_j
+	
+EXIT:
+	li $v0, 10
+	syscall

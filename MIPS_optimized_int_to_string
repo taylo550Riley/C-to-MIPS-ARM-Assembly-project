@@ -1,0 +1,68 @@
+# Riley Taylor
+# Dr. Jamieson
+# 4/2/22
+# Intermediate Assembly int to string
+##################### Optimization #####################
+# I used the instruction counter tool built into mips
+
+# Unoptimized:
+	# program instructions:
+		# 511
+
+# Optimized:
+	# program instructions:
+		# 446
+		
+# Cycles saved: 65
+# Speed up: 1.1456
+
+###########################################################
+.data
+	orig_long:	.word	-154
+	num_bits:	.word	32 # max for long long is 64
+	one:		.byte 	'1'
+	zero:		.byte	'0'
+	null:		.byte	'\0'
+.text
+main:
+	lw $s0, num_bits
+	lw $s1, orig_long
+	lb $s3, one 			# $s3 = '1'
+	lb $s4, zero 			# $s4 = '0'
+	lb $s6, null 			# $s6 = '\0'
+	sub $s2, $s0, 1 		# i = num_bits - 1
+	li $s5, 1 			# mask = 1
+	addiu $t0, $s2, 268697600 	# dynamic memory start
+	
+	li $v0, 9
+	move $a0, $s0 			# char *return_val = (char*)malloc(sizeof(char)*65)
+	syscall	   		 	# 65 because long long = 64 bits + '\0' = 65
+	
+	jal for_i
+	
+	j EXIT
+for_i:
+	beq $s2, 0, jumpReturn
+	and $v0, $s1, $s5
+	bgt $v0, 0, if_success # mask & orig_long
+	# else {
+	sb $s4, ($t0)
+	sub $t0, $t0, 1 # point to next bit in dynamic memory
+	sll $s5, $s5, 1 # mask = mask << 1
+	sub $s2, $s2, 1
+	j for_i
+	
+		if_success:
+		sb $s3, ($t0)
+		sub $t0, $t0, 1 # point to next bit in dynamic memory
+		sll $s5, $s5, 1 # mask = mask << 1
+		sub $s2, $s2, 1
+		j for_i
+jumpReturn:
+	jr $ra
+	
+EXIT:
+	addiu $t1, $s0, 268697600 # stores null terminator
+	sb $s6, ($t1)
+	li $v0, 10
+	syscall

@@ -1,0 +1,39 @@
+# Riley Taylor
+# Dr. Jamieson
+# 4/2/22
+# Intermediate Assembly GCD
+# Recursive GCD, slowly works toward the GCD by the use of subtraction
+# works with 0 inputs as well
+main:
+
+	li $s0, 13		# unsigned int u
+	li $s1, 52 		# unsigned int v
+	li $s2, 0 		# result
+	jal GCD
+
+GCD:
+	beq $s0, 0, returnS1 	# if u == 0, return the value v
+	beq $s1, 0, returnS0	# if v == 0, return the value u
+	beq $s0, $s1, EXIT 	# if u == v, return u or v
+	bge $s0, $s1, subtract 	# if (u >= v)
+	sub $s1, $s1, $s0 	# else v = v - u
+	j GCD
+	
+subtract:
+	sub $s0, $s0, $s1 	# u = u - v
+	j GCD
+
+returnS0:
+	add $s2, $s0, 0		# $s2 holds the return value
+	li $v0, 10
+	syscall
+	
+returnS1:
+	add $s2, $s1, 0		# $s2 holds the return value
+	li $v0, 10
+	syscall
+	
+EXIT:
+	add $s2, $s0, 0		# $s2 holds the return value
+	li $v0, 10
+	syscall
